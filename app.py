@@ -1,131 +1,5 @@
-# from flask import Flask, request, send_file
-# import pandas as pd
-# import os
-# from docx import Document
-# from docx.enum.text import WD_COLOR_INDEX
-# import zipfile
-
-# app = Flask(__name__)
-
-# UPLOAD_FOLDER = "uploads"
-# OUTPUT_FOLDER = "output"
-
-# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-# os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
-
-# # 🔥 REPLACE WITH BOLD + HIGHLIGHT
-# def replace_placeholders(doc, data):
-
-#     def process_paragraph(paragraph):
-#         for key, value in data.items():
-#             placeholder = "{{" + key + "}}"
-
-#             if placeholder in paragraph.text:
-
-#                 # Clear paragraph
-#                 paragraph.clear()
-
-#                 parts = paragraph.text.split(placeholder)
-
-#                 for i, part in enumerate(parts):
-#                     paragraph.add_run(part)
-
-#                     if i < len(parts) - 1:
-#                         run = paragraph.add_run(str(value))
-#                         run.bold = True
-#                         run.font.highlight_color = WD_COLOR_INDEX.YELLOW
-
-#     # 🔁 PARAGRAPHS
-#     for para in doc.paragraphs:
-#         process_paragraph(para)
-
-#     # 🔁 TABLES
-#     for table in doc.tables:
-#         for row in table.rows:
-#             for cell in row.cells:
-#                 for para in cell.paragraphs:
-#                     process_paragraph(para)
-
-
-# # 🚀 GENERATE DOCUMENTS
-# def generate_documents(excel_path, template_path):
-#     df = pd.read_excel(excel_path)
-
-#     # CLEAN COLUMN NAMES
-#     df.columns = df.columns.str.strip().str.replace(" ", "").str.replace("/", "")
-#     df = df.fillna("")
-
-#     all_files = []
-
-#     for i, row in df.iterrows():
-#         data = {k: str(v) for k, v in row.to_dict().items()}
-
-#         employee_name = data.get("FullName", f"Employee_{i}")
-
-#         # 📁 CREATE EMPLOYEE FOLDER
-#         emp_folder = os.path.join(OUTPUT_FOLDER, employee_name)
-#         os.makedirs(emp_folder, exist_ok=True)
-
-#         doc = Document(template_path)
-
-#         replace_placeholders(doc, data)
-
-#         file_name = f"{employee_name}.docx"
-#         output_path = os.path.join(emp_folder, file_name)
-
-#         doc.save(output_path)
-
-#         all_files.append(output_path)
-
-#     # 📦 ZIP ALL
-#     zip_path = os.path.join(OUTPUT_FOLDER, "All_Employees.zip")
-
-#     with zipfile.ZipFile(zip_path, 'w') as zipf:
-#         for f in all_files:
-#             zipf.write(f, os.path.relpath(f, OUTPUT_FOLDER))
-
-#     return zip_path
-
-
-# @app.route("/", methods=["GET", "POST"])
-# def index():
-#     if request.method == "POST":
-#         try:
-#             excel = request.files.get("excel")
-#             template = request.files.get("template")
-
-#             if not excel or not template:
-#                 return "❌ Upload both files"
-
-#             excel_path = os.path.join(UPLOAD_FOLDER, excel.filename)
-#             template_path = os.path.join(UPLOAD_FOLDER, template.filename)
-
-#             excel.save(excel_path)
-#             template.save(template_path)
-
-#             zip_file = generate_documents(excel_path, template_path)
-
-#             return send_file(zip_file, as_attachment=True)
-
-#         except Exception as e:
-#             return f"❌ ERROR: {str(e)}"
-
-#     return '''
-#     <h2>Employee Document Automation</h2>
-#     <form method="POST" enctype="multipart/form-data">
-#         Excel: <input type="file" name="excel"><br><br>
-#         Template (.docx with {{placeholders}}): <input type="file" name="template"><br><br>
-#         <button type="submit">Generate</button>
-#     </form>
-#     '''
-
-
-# if __name__ == "__main__":
-#     app.run(debug=True)
-
-
 """
+go to line 23 24
 Appointment Letter Generator - Flask App (Windows Compatible)
 - No LibreOffice required
 - Uses docx2pdf (calls MS Word on Windows automatically)
@@ -145,8 +19,12 @@ from pypdf import PdfReader, PdfWriter
 app = Flask(__name__)
 
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-OUTPUT_FOLDER = os.path.join(BASE_DIR, "output")
+#to run locally
+# UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+# OUTPUT_FOLDER = os.path.join(BASE_DIR, "output")
+#to run web
+UPLOAD_FOLDER = "/tmp/uploads"
+OUTPUT_FOLDER = "/tmp/output"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
