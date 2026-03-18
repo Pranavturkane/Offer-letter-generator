@@ -168,14 +168,15 @@ def generate_documents(excel_path, template_path):
 
     pdf_files = []
     errors    = []
+    docx_index = []  # tracks (tmp_docx, raw_pdf, final_pdf, password)
 
+    # Step 1 — fill and save all .docx files first
     for idx, row in df.iterrows():
         row_data  = row.to_dict()
         full_name = safe_filename(str(row_data.get("Full Name", f"Employee_{idx}")))
         pdf_name  = safe_filename(str(row_data.get("PdfFileName", full_name))) or full_name
         password  = str(row_data.get("Password", DEFAULT_PASSWORD)).strip() or DEFAULT_PASSWORD
 
-        # Use index in temp name to avoid any spaces/special chars crashing conversion
         tmp_docx  = os.path.join(OUTPUT_FOLDER, f"tmp_{idx}.docx")
         raw_pdf   = os.path.join(OUTPUT_FOLDER, f"tmp_{idx}.pdf")
         final_pdf = os.path.join(OUTPUT_FOLDER, pdf_name + ".pdf")
@@ -183,19 +184,31 @@ def generate_documents(excel_path, template_path):
         try:
             doc = fill_template(template_path, row_data)
             doc.save(tmp_docx)
-
-            converted = docx_to_pdf(tmp_docx, OUTPUT_FOLDER)
-
-            # Rename raw PDF to index-based name if needed
-            if converted != raw_pdf and os.path.exists(converted):
-                shutil.move(converted, raw_pdf)
-
-            encrypt_pdf(raw_pdf, final_pdf, password)
-            pdf_files.append(final_pdf)
-
+            docx_index.append((tmp_docx, raw_pdf, final_pdf, password))
         except Exception as e:
             errors.append(f"{full_name}:\n{traceback.format_exc()}")
 
+    # Step 2 — convert ALL docx files in one single LibreOffice call
+    all_docx_paths = [d[0] for d in docx_index]
+    if all_docx_paths:
+        import subprocess
+        subprocess.run(
+            ["libreoffice", "--headless", "--norestore", "--nofirststartwizard",
+             "--convert-to", "pdf", "--outdir", OUTPUT_FOLDER] + all_docx_paths,
+            capture_output=True, text=True, timeout=300,
+            env={**os.environ, "HOME": "/tmp", "TMPDIR": "/tmp"}
+        )
+
+    # Step 3 — encrypt each PDF individually
+    for tmp_docx, raw_pdf, final_pdf, password in docx_index:
+        full_name = os.path.splitext(os.path.basename(final_pdf))[0]
+        try:
+            if not os.path.exists(raw_pdf):
+                raise FileNotFoundError(f"PDF not generated: {raw_pdf}")
+            encrypt_pdf(raw_pdf, final_pdf, password)
+            pdf_files.append(final_pdf)
+        except Exception as e:
+            errors.append(f"{full_name}:\n{traceback.format_exc()}")
         finally:
             for f in [tmp_docx, raw_pdf]:
                 if os.path.exists(f):
@@ -217,7 +230,6 @@ def generate_documents(excel_path, template_path):
             zf.write(fp, os.path.basename(fp))
 
     return zip_path, len(pdf_files) - len(errors), errors
-
 
 # ── Flask UI ──────────────────────────────────────────────────────────────────
 
