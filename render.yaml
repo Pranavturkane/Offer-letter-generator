@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: offer-letter-generator
+    runtime: python
+    buildCommand: "apt-get install -y libreoffice && pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
