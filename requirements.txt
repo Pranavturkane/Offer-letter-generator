@@ -4,3 +4,4 @@ python-docx
 pypdf
 openpyxl
 gunicorn
+docx2pdf
