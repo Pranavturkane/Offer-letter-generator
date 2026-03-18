@@ -131,39 +131,18 @@ def docx_to_pdf(docx_path, out_dir):
     base     = os.path.splitext(os.path.basename(docx_path))[0]
     pdf_path = os.path.join(out_dir, base + ".pdf")
 
-    # Method 1: docx2pdf (uses MS Word on Windows — best quality)
-    try:
-        from docx2pdf import convert
-        convert(docx_path, pdf_path)
-        if os.path.exists(pdf_path):
-            return pdf_path
-    except Exception:
-        pass
-
-    # Method 2: LibreOffice (cross-platform fallback)
-    try:
-        import subprocess
-        result = subprocess.run(
-            ["libreoffice", "--headless", "--convert-to", "pdf",
-             "--outdir", out_dir, docx_path],
-            capture_output=True, text=True, timeout=60
-        )
-        lo_pdf = os.path.join(out_dir, base + ".pdf")
-        if os.path.exists(lo_pdf):
-            return lo_pdf
-        raise RuntimeError(result.stderr.strip())
-    except FileNotFoundError:
-        pass
-
-    raise RuntimeError(
-        "Could not convert to PDF.\n"
-        "Please install either:\n"
-        "  - Microsoft Word (recommended for Windows)\n"
-        "  - LibreOffice (free, cross-platform)\n"
-        "Then run:  pip install docx2pdf"
+    import subprocess
+    result = subprocess.run(
+        ["libreoffice", "--headless", "--norestore", "--nofirststartwizard",
+         "--convert-to", "pdf", "--outdir", out_dir, docx_path],
+        capture_output=True, text=True, timeout=120,
+        env={**os.environ, "HOME": "/tmp", "TMPDIR": "/tmp"}
     )
 
+    if os.path.exists(pdf_path):
+        return pdf_path
 
+    raise RuntimeError(f"LibreOffice failed: {result.stderr.strip() or result.stdout.strip()}")
 # ── PDF password protection ───────────────────────────────────────────────────
 
 def encrypt_pdf(src, dst, password):
